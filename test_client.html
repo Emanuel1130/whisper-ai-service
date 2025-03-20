@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Whisper API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            min-height: 100px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Whisper Trascrizione</h1>
+    
+    <form id="uploadForm">
+        <div class="form-group">
+            <label for="audioFile">File Audio:</label>
+            <input type="file" id="audioFile" accept="audio/*" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="language">Lingua (opzionale, ad es. "it"):</label>
+            <input type="text" id="language" placeholder="Lascia vuoto per rilevamento automatico">
+        </div>
+        
+        <button type="submit">Trascrivi</button>
+    </form>
+    
+    <h2>Risultato:</h2>
+    <div id="result" class="result">
+        <em>La trascrizione apparirà qui...</em>
+    </div>
+    
+    <div id="status"></div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const audioFile = document.getElementById('audioFile').files[0];
+            const language = document.getElementById('language').value;
+            
+            if (!audioFile) {
+                alert('Seleziona un file audio');
+                return;
+            }
+            
+            formData.append('audio_file', audioFile);
+            if (language) formData.append('language', language);
+            
+            const statusEl = document.getElementById('status');
+            const resultEl = document.getElementById('result');
+            
+            try {
+                statusEl.textContent = 'Inizio trascrizione...';
+                resultEl.innerHTML = '<em>In elaborazione...</em>';
+                
+                const response = await fetch('http://localhost:8000/transcribe/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Errore durante la trascrizione');
+                }
+                
+                const data = await response.json();
+                resultEl.textContent = data.transcription;
+                statusEl.textContent = 'Trascrizione completata!';
+            } catch (error) {
+                console.error('Errore:', error);
+                resultEl.innerHTML = `<strong style="color: red">Errore:</strong> ${error.message}`;
+                statusEl.textContent = 'Si è verificato un errore';
+            }
+        });
+    </script>
+</body>
+</html> 
