@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Whisper Transcription Service</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #3498db;
+        }
+        code {
+            background-color: #f8f8f8;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .endpoint {
+            background-color: #e8f4fc;
+            padding: 10px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+        }
+        .method {
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .url {
+            font-weight: bold;
+        }
+        .note {
+            background-color: #fff8dc;
+            padding: 10px;
+            border-left: 4px solid #f1c40f;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Whisper Transcription API</h1>
+    <p>Official API for audio transcription based on OpenAI Whisper.</p>
+
+    <h2>General Information</h2>
+    <ul>
+        <li><strong>Base URL</strong>: <code>https://transcription.wraiter.it</code></li>
+        <li><strong>Supported audio formats</strong>: mp3, wav, ogg, flac, m4a</li>
+        <li><strong>Supported languages</strong>: Multilingual with specific support for Italian</li>
+        <li><strong>Technology</strong>: OpenAI Whisper, FastAPI</li>
+    </ul>
+
+    <div class="note">
+        <p><strong>Note</strong>: This service is designed to provide accurate transcriptions of audio files using OpenAI's Whisper speech recognition model.</p>
+    </div>
+
+    <h2>Endpoints</h2>
+    
+    <div class="endpoint">
+        <h3><span class="method">POST</span> <span class="url">/transcribe/</span></h3>
+        <p>Transcribes an audio file into text.</p>
+
+        <h4>Request Parameters:</h4>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>audio_file</td>
+                <td>File</td>
+                <td>Yes</td>
+                <td>Audio file to transcribe</td>
+            </tr>
+            <tr>
+                <td>language</td>
+                <td>String</td>
+                <td>No</td>
+                <td>Language code (e.g. "it" for Italian). If not specified, it will be automatically detected</td>
+            </tr>
+        </table>
+
+        <h4>cURL Request Example:</h4>
+        <pre><code>curl -X POST "https://transcription.wraiter.it/transcribe/" \
+  -H "Content-Type: multipart/form-data" \
+  -F "audio_file=@file.mp3" \
+  -F "language=it"</code></pre>
+
+        <h4>Python Request Example:</h4>
+        <pre><code>import requests
+
+url = "https://transcription.wraiter.it/transcribe/"
+files = {"audio_file": open("file.mp3", "rb")}
+data = {"language": "it"}  # Optional
+
+response = requests.post(url, files=files, data=data)
+result = response.json()
+print(result["transcription"])
+</code></pre>
+
+        <h4>Response Example:</h4>
+        <pre><code>{
+  "transcription": "This is the transcribed text from the audio file."
+}</code></pre>
+
+        <h4>Status Codes:</h4>
+        <table>
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>200</td>
+                <td>Success. The response contains the transcription</td>
+            </tr>
+            <tr>
+                <td>400</td>
+                <td>Bad request. Missing file or unsupported format</td>
+            </tr>
+            <tr>
+                <td>413</td>
+                <td>File too large</td>
+            </tr>
+            <tr>
+                <td>500</td>
+                <td>Internal server error</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Usage Limits</h2>
+    <ul>
+        <li>Maximum file size: 25MB</li>
+        <li>Maximum audio duration: 10 minutes</li>
+        <li>Rate limit: 60 requests/hour per IP address</li>
+    </ul>
+
+    <h2>Supported Models</h2>
+    <p>The service uses OpenAI's Whisper model, with different variants available based on accuracy needs:</p>
+    <table>
+        <tr>
+            <th>Model</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>tiny</td>
+            <td>Lightest model, great for quick transcriptions with moderate accuracy</td>
+        </tr>
+        <tr>
+            <td>base</td>
+            <td>Balances speed and accuracy (default)</td>
+        </tr>
+        <tr>
+            <td>small</td>
+            <td>Higher accuracy at the cost of longer processing times</td>
+        </tr>
+        <tr>
+            <td>medium</td>
+            <td>High accuracy for complex audio</td>
+        </tr>
+        <tr>
+            <td>large</td>
+            <td>Maximum available accuracy</td>
+        </tr>
+    </table>
+
+    <h2>Integration</h2>
+    <p>This API is designed to be easily integrated into any application that requires audio transcription functionality. The RESTful endpoint provides a standardized interface accessible from any programming language with HTTP support.</p>
+
+    <h2>Privacy Policy</h2>
+    <p>Uploaded audio files are processed exclusively to provide the transcription service and are not permanently stored on our servers. Files are automatically deleted after processing.</p>
+
+    <footer style="margin-top: 50px; border-top: 1px solid #ddd; padding-top: 20px; color: #777; font-size: 0.9em;">
+        <p>© 2023 Whisper Transcription Service. Official API documentation.</p>
+        <p>The service is hosted at <code>transcription.wraiter.it</code></p>
+    </footer>
+</body>
+</html> 
