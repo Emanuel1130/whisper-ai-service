@@ -27,8 +27,8 @@ whisper_service = None
 
 def get_whisper_service():
     """
-    Factory per ottenere l'istanza del servizio WhisperService.
-    Inizializza il servizio la prima volta che viene richiesto.
+    # Factory to obtain the instance of the WhisperService.
+    # Initializes the service the first time it is requested.
     """
     global whisper_service
     if whisper_service is None:
@@ -42,19 +42,19 @@ async def transcribe_audio(
     service: WhisperService = Depends(get_whisper_service)
 ):
     """
-    Endpoint per trascrivere un file audio utilizzando Whisper.
+    Endpoint to transcribe an audio file using Whisper.
     
     Args:
-        audio_file: File audio da trascrivere
-        language: Lingua opzionale per la trascrizione
-        service: Istanza del servizio WhisperService
+        audio_file: Audio file to be transcribed
+        language: Optional language for the transcription
+        service: Instance of the WhisperService
         
     Returns:
-        Oggetto JSON contenente la trascrizione
+        JSON object containing the transcription
     """
     # Controllo se il file è un file audio
     if not audio_file.content_type.startswith("audio/"):
-        raise HTTPException(status_code=400, detail="Il file caricato non è un file audio")
+        raise HTTPException(status_code=400, detail="The uploaded file is not an audio file")
     
     try:
         # Lettura del contenuto del file
@@ -66,4 +66,4 @@ async def transcribe_audio(
         return {"transcription": transcription}
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore durante la trascrizione: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error during transcription: {str(e)}")
