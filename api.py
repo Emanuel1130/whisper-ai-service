@@ -8,9 +8,16 @@ app = FastAPI(title="Whisper AI Service")
 # Configurazione CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.wraiter.it", "http://localhost:4200", "http://localhost:8080"],
+    allow_origins=[
+        "https://www.wraiter.it", 
+        "http://localhost:4200", 
+        "http://localhost:8080",
+        "http://localhost:8000",
+        "https://transcription.wraiter.it",    # Sottodominio Cloudflare Tunnel
+        "https://wraiter.it"                  # Dominio principale
+    ],
     allow_credentials=True,
-    allow_methods=["POST"],
+    allow_methods=["POST", "OPTIONS"],   # Aggiunto OPTIONS per supportare i preflight request
     allow_headers=["*"],
 )
 
