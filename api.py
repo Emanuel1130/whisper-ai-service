@@ -8,7 +8,7 @@ app = FastAPI(title="Whisper AI Service")
 # Configurazione CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.wraiter.it", "http://localhost:4200"],
+    allow_origins=["https://www.wraiter.it", "http://localhost:4200", "http://localhost:8080"],
     allow_credentials=True,
     allow_methods=["POST"],
     allow_headers=["*"],
@@ -62,7 +62,3 @@ async def transcribe_audio(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore durante la trascrizione: {str(e)}")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 

@@ -2,3 +2,12 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
+
+dist/
+build/
+
+avvia_servizio.bat
+test_client.bat
+README_ESEGUIBILE.md
+
+whisper-ai-servce.spec
