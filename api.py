@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
-import os
 from whisper_service import WhisperService
 
 app = FastAPI(title="Whisper AI Service")
@@ -13,18 +12,15 @@ app.add_middleware(
         "http://localhost:4200", 
         "http://localhost:8080",
         "http://localhost:8000",
-        "https://ematosc.pythonanywhere.com/",
-        "https://www.wraiter.it",
-        "https://transcription.wraiter.it"
+        "https://ematosc.pythonanywhere.com/"
     ],
     allow_credentials=True,
     allow_methods=["POST", "OPTIONS"],   # Aggiunto OPTIONS per supportare i preflight request
     allow_headers=["*"],
 )
 
-# Definisco il modello da utilizzare, leggendo da variabile d'ambiente o utilizzando un valore predefinito
-MODEL_SIZE = os.environ.get("MODEL_SIZE", "base")  # Legge da variabile d'ambiente o usa "base" come default
-print(f"Usando il modello Whisper: {MODEL_SIZE}")
+# Definisco il modello da utilizzare
+MODEL_SIZE = "base"  # Modelli disponibili: 'tiny', 'base', 'small', 'medium', 'large'
 
 # Istanza del servizio Whisper
 whisper_service = None
