@@ -15,7 +15,7 @@ app.add_middleware(
 )
 
 # Definisco il modello da utilizzare
-MODEL_SIZE = "base"  # Puoi cambiare in "medium" o altro modello
+MODEL_SIZE = "base"  # Modelli disponibili: 'tiny', 'base', 'small', 'medium', 'large'
 
 # Istanza del servizio Whisper
 whisper_service = None
