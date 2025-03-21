@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servizio di Trascrizione Audio - Client di Esempio</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .upload-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        select, button, input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .result-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        
+        .transcription {
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3498db;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        .progress-bar {
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            height: 20px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            background-color: #3498db;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background-color: #fadbd8;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Servizio di Trascrizione Audio</h1>
+        
+        <div class="upload-section">
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="audio-file">Seleziona File Audio:</label>
+                    <input type="file" id="audio-file" accept="audio/*" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="language">Lingua (opzionale):</label>
+                    <select id="language">
+                        <option value="">Auto-rilevamento</option>
+                        <option value="it">Italiano</option>
+                        <option value="en">Inglese</option>
+                        <option value="fr">Francese</option>
+                        <option value="de">Tedesco</option>
+                        <option value="es">Spagnolo</option>
+                    </select>
+                </div>
+                
+                <button type="submit" id="submit-btn">Trascrivi Audio</button>
+            </form>
+        </div>
+        
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p id="status-message">Elaborazione in corso...</p>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+        </div>
+        
+        <div id="error" class="error hidden"></div>
+        
+        <div id="result-section" class="result-section hidden">
+            <h2>Trascrizione:</h2>
+            <div id="transcription" class="transcription"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('upload-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const loading = document.getElementById('loading');
+            const resultSection = document.getElementById('result-section');
+            const transcriptionOutput = document.getElementById('transcription');
+            const errorOutput = document.getElementById('error');
+            const statusMessage = document.getElementById('status-message');
+            const progressBar = document.getElementById('progress-bar');
+            
+            let pollingIntervalId = null;
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Resetta UI
+                resultSection.classList.add('hidden');
+                errorOutput.classList.add('hidden');
+                
+                const audioFile = document.getElementById('audio-file').files[0];
+                const language = document.getElementById('language').value;
+                
+                if (!audioFile) {
+                    showError('Seleziona un file audio da trascrivere.');
+                    return;
+                }
+                
+                // Mostra lo stato di caricamento
+                loading.classList.remove('hidden');
+                submitBtn.disabled = true;
+                progressBar.style.width = '10%';
+                
+                try {
+                    // Preparazione form data
+                    const formData = new FormData();
+                    formData.append('audio_file', audioFile);
+                    if (language) {
+                        formData.append('language', language);
+                    }
+                    
+                    // Invia richiesta di trascrizione
+                    statusMessage.textContent = "Invio del file in corso...";
+                    progressBar.style.width = '20%';
+                    
+                    const response = await fetch('/transcribe/', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Errore del server: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    const jobId = data.job_id;
+                    
+                    if (!jobId) {
+                        throw new Error('Risposta del server non valida: ID del job mancante');
+                    }
+                    
+                    // Inizia il polling dello stato del job
+                    statusMessage.textContent = "Trascrizione in corso...";
+                    progressBar.style.width = '30%';
+                    
+                    // Clear any existing polling interval
+                    if (pollingIntervalId) {
+                        clearInterval(pollingIntervalId);
+                    }
+                    
+                    let progress = 30;
+                    let pollCount = 0;
+                    
+                    pollingIntervalId = setInterval(async () => {
+                        try {
+                            pollCount++;
+                            
+                            // Simulazione di avanzamento per dare un feedback visivo all'utente
+                            // Raggiunge l'85% come massimo durante l'attesa
+                            if (progress < 85) {
+                                progress += 5;
+                                if (progress > 85) progress = 85;
+                                progressBar.style.width = `${progress}%`;
+                            }
+                            
+                            const statusResponse = await fetch(`/transcribe/status/${jobId}`);
+                            
+                            if (!statusResponse.ok) {
+                                throw new Error(`Errore nel controllo dello stato: ${statusResponse.status}`);
+                            }
+                            
+                            const statusData = await statusResponse.json();
+                            
+                            if (statusData.status === 'completed') {
+                                // Trascrizione completata con successo
+                                clearInterval(pollingIntervalId);
+                                progressBar.style.width = '100%';
+                                
+                                // Mostra il risultato
+                                transcriptionOutput.textContent = statusData.transcription;
+                                resultSection.classList.remove('hidden');
+                                loading.classList.add('hidden');
+                                submitBtn.disabled = false;
+                            } 
+                            else if (statusData.status === 'error') {
+                                // Errore durante la trascrizione
+                                clearInterval(pollingIntervalId);
+                                showError(`Errore durante la trascrizione: ${statusData.error}`);
+                                submitBtn.disabled = false;
+                                loading.classList.add('hidden');
+                            }
+                            // Per lo stato 'processing' continuiamo con il polling
+                            
+                            // Timeout dopo 20 minuti di polling (60 richieste a 20s l'una)
+                            if (pollCount > 60) {
+                                clearInterval(pollingIntervalId);
+                                showError('Tempo massimo di attesa superato. La trascrizione potrebbe richiedere troppo tempo.');
+                                submitBtn.disabled = false;
+                                loading.classList.add('hidden');
+                            }
+                        } catch (error) {
+                            clearInterval(pollingIntervalId);
+                            showError(`Errore durante il polling: ${error.message}`);
+                            submitBtn.disabled = false;
+                            loading.classList.add('hidden');
+                        }
+                    }, 5000); // Controlla lo stato ogni 5 secondi
+                    
+                } catch (error) {
+                    showError(`Errore: ${error.message}`);
+                    submitBtn.disabled = false;
+                    loading.classList.add('hidden');
+                }
+            });
+            
+            function showError(message) {
+                errorOutput.textContent = message;
+                errorOutput.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html> 
